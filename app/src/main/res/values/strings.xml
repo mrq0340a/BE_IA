@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Remote</string>
+    <string name="action_about">About</string>
+    <string name="forward">Forwarding …</string>
+    <string name="left">Turning left …</string>
+    <string name="right">Turning right …</string>
+    <string name="backward">Backwarding …</string>
+</resources>
