@@ -1,13 +1,10 @@
 package behavior;
 
-import javax.swing.plaf.basic.BasicTreeUI.TreeTraverseAction;
 
-import lejos.nxt.LCD;
 import lejos.nxt.LightSensor;
 import lejos.nxt.NXTRegulatedMotor;
 import lejos.nxt.SensorPort;
 import lejos.robotics.navigation.DifferentialPilot;
-import lejos.robotics.subsumption.Behavior;
 
 public class TestMarking {
 	protected final static int DefaultMotorSpeed = 300;
@@ -34,25 +31,21 @@ public class TestMarking {
 		pilote.setTravelSpeed(60);
 	}
 	
-	public Mark testMarking() throws InterruptedException {
+	public Mark testMarking(){
 		pilote.travel(40);
 		if (lftLight.readNormalizedValue() > lightThresholdNormalize
 				&& rgtLight.readNormalizedValue() > lightThresholdNormalize) { // double strip
 			pilote.travel(20);
 			if (lftLight.readNormalizedValue() > lightThresholdNormalize
 					&& rgtLight.readNormalizedValue() > lightThresholdNormalize) {
-//				LCD.drawChar('O', 0, 0);
-//				Thread.sleep(2000);
+				pilote.stop();
 				return Mark.OBSTACLE;
 			}
-//			LCD.drawChar('D', 0, 0);
-//			Thread.sleep(2000);
+			pilote.stop();
 			return Mark.DOUBLE_STRIP;
 		}
 		pilote.stop();
-//		LCD.drawChar('S', 0, 0);
-//		Thread.sleep(2000);
-		return  Mark.SIMPLE_STRIP; 
+		return  Mark.SIMPLE_STRIP;  
 	}
 	
 //	@Override

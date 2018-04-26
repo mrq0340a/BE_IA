@@ -3,25 +3,29 @@ package behavior;
 import lejos.nxt.LightSensor;
 import lejos.nxt.NXTRegulatedMotor;
 import lejos.nxt.SensorPort;
+import lejos.robotics.navigation.DifferentialPilot;
 import lejos.robotics.subsumption.Behavior;
+import lejos.util.PIDController;
+import lejos.util.PilotProps;
 
 public class Turn implements Behavior {
 	protected final static int DefaultMotorSpeed = 300;
 	protected static final int lightThresholdNormalize = 487;
 	protected static final int DefautRotateSpeed = 180;
 	protected static final float slowDownPercent = 0.30f;
-	protected static final int motorSpeedTurn = 250;
-	protected static final float slowDownPercentTurn = 0.25f;
+	protected static final int motorSpeedTurn = 300;
+	protected static final float slowDownPercentTurn = 0.30f;
 
-	protected static final int lowThreshold = 450;
-	protected static final int highThreshold = 550;
+	protected static final int lowThreshold = 460;
+	protected static final int highThreshold = 530;
 
 	private boolean suppress = false;
 
-	private NXTRegulatedMotor rgtMotor;
+	private NXTRegulatedMotor rgtMotor; 
 	private NXTRegulatedMotor lftMotor;
 	private LightSensor rgtLight;
 	private LightSensor lftLight;
+	private DifferentialPilot pilote;
 
 	public Turn(NXTRegulatedMotor rgtMotor, NXTRegulatedMotor lftMotor, SensorPort rgtLight, SensorPort lftLight,
 			boolean direction) {
@@ -36,6 +40,50 @@ public class Turn implements Behavior {
 			this.rgtLight = new LightSensor(rgtLight);
 			this.lftMotor = lftMotor;
 			this.rgtMotor = rgtMotor;
+		}
+		pilote = new DifferentialPilot(56, 106, rgtMotor, lftMotor);
+	}
+
+	public void turn1() {
+		int i = 0;
+		boolean variation = rgtLight.readNormalizedValue() > lightThresholdNormalize;
+		boolean oldVariation;
+		boolean go = true;
+		// rgtMotor.setSpeed(motorSpeedTurn);
+		PIDController pid = new PIDController(400, 20);
+		pid.setPIDParam(PIDController.PID_KD, 10.0f);
+		 pid.setPIDParam(PIDController.PID_KI, 0.0005f);
+//		 pid.setPIDParam(PIDController.PID_KP, 0.01f);
+		while (go) {
+			int speedDelta = pid.doPID(lftLight.getNormalizedLightValue());
+			if (i < 5) {
+				if (lftLight.getNormalizedLightValue() > lightThresholdNormalize) {
+					lftMotor.setSpeed(motorSpeedTurn + speedDelta);
+					rgtMotor.setSpeed(motorSpeedTurn - speedDelta);
+				} else {
+					lftMotor.setSpeed(motorSpeedTurn - speedDelta);
+					rgtMotor.setSpeed(motorSpeedTurn + speedDelta);
+				}
+			}else {
+				lftMotor.setSpeed(motorSpeedTurn*0.9f);
+				rgtMotor.setSpeed(motorSpeedTurn*0.9f);
+			}
+			
+			lftMotor.forward();
+			rgtMotor.forward();
+
+			oldVariation = variation;
+			variation = rgtLight.readNormalizedValue() > lightThresholdNormalize;
+			if (variation != oldVariation)
+				i++;
+
+			if (i > 5) {
+				go = false;
+				// lftMotor.stop();
+				// rgtMotor.stop();
+				pilote.stop();
+				suppress = true;
+			}
 		}
 	}
 
@@ -54,17 +102,16 @@ public class Turn implements Behavior {
 			// lftMotor.setSpeed(motorSpeedTurn);
 			// }
 			if (lftLight.getNormalizedLightValue() >= highThreshold && i < 5) {
-				lftMotor.setSpeed(DefaultMotorSpeed * 0);
+				lftMotor.setSpeed(motorSpeedTurn * 0);
 			} else if (lftLight.getNormalizedLightValue() > lowThreshold
 					&& lftLight.getNormalizedLightValue() < highThreshold && i < 5) {
-				lftMotor.setSpeed(DefaultMotorSpeed
+				lftMotor.setSpeed(motorSpeedTurn
 						* ((lftLight.getNormalizedLightValue() - lowThreshold) / (highThreshold - lowThreshold)));
 			} else {
-				lftMotor.setSpeed(DefaultMotorSpeed);
-				rgtMotor.setSpeed(DefaultMotorSpeed * 0.8f);
+				lftMotor.setSpeed(motorSpeedTurn);
+				rgtMotor.setSpeed(motorSpeedTurn * 0.95f);
 			}
-			
-			
+
 			lftMotor.forward();
 			rgtMotor.forward();
 
@@ -75,8 +122,9 @@ public class Turn implements Behavior {
 
 			if (i > 5) {
 				go = false;
-				lftMotor.stop();
-				rgtMotor.stop();
+//				lftMotor.stop();
+//				rgtMotor.stop();
+				pilote.stop();
 				suppress = true;
 			}
 		}
@@ -85,25 +133,25 @@ public class Turn implements Behavior {
 
 	// public void turn() {
 	// int i = 0;
-	// boolean variation = Constante.rgtLight.readNormalizedValue() >
-	// Constante.lightThresholdNormalize;
+	// boolean variation = Cst.rgtLight.readNormalizedValue() >
+	// Cst.lightThresholdNormalize;
 	// boolean oldVariation;
 	// boolean go = true;
-	// Constante.rgtMotor.setSpeed(Constante.motorSpeedTurn);
+	// Cst.rgtMotor.setSpeed(Cst.motorSpeedTurn);
 	// while (go) {
-	// if (Constante.lftLight.readNormalizedValue() >
-	// Constante.lightThresholdNormalize) {
-	// Constante.lftMotor.setSpeed(Constante.motorSpeedTurn *
-	// Constante.slowDownPercentTurn);
+	// if (Cst.lftLight.readNormalizedValue() >
+	// Cst.lightThresholdNormalize) {
+	// Cst.lftMotor.setSpeed(Cst.motorSpeedTurn *
+	// Cst.slowDownPercentTurn);
 	// } else {
-	// Constante.lftMotor.setSpeed(Constante.motorSpeedTurn);
+	// Cst.lftMotor.setSpeed(Cst.motorSpeedTurn);
 	// }
-	// Constante.lftMotor.forward();
-	// Constante.rgtMotor.forward();
+	// Cst.lftMotor.forward();
+	// Cst.rgtMotor.forward();
 	//
 	// oldVariation = variation;
-	// if (Constante.rgtLight.readNormalizedValue() >
-	// Constante.lightThresholdNormalize) {
+	// if (Cst.rgtLight.readNormalizedValue() >
+	// Cst.lightThresholdNormalize) {
 	// variation = true;
 	// } else {
 	// variation = false;
@@ -114,8 +162,8 @@ public class Turn implements Behavior {
 	//
 	// if (i > 5) {
 	// go = false;
-	// Constante.lftMotor.stop();
-	// Constante.rgtMotor.stop();
+	// Cst.lftMotor.stop();
+	// Cst.rgtMotor.stop();
 	// }
 	// }
 	//

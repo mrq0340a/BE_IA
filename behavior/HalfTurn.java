@@ -12,6 +12,7 @@ public class HalfTurn implements Behavior {
 	public HalfTurn(NXTRegulatedMotor rgtMotor, NXTRegulatedMotor lftMotor) {
 		this.lftMotor = lftMotor; this.rgtMotor = rgtMotor;
 		pilote = new DifferentialPilot(56, 106, rgtMotor, lftMotor);
+		pilote.setRotateSpeed(100);
 	}
 	
 	public void halfTurn () {
