@@ -2,8 +2,6 @@ package routingAlgorithm;
 
 import java.util.ArrayList;
 import java.util.List;
-//import java.util.TreeSet;
-import java.util.Scanner;
 
 import graph.CreatGraph;
 import graph.Direction;
@@ -15,108 +13,161 @@ import graph.Vertex;
  *
  */
 public class Astar {
-	private static final int INFINI = 1000; // the value of the vertex that has an obstacle  
+	private static final int INFINI = 1000; // the value of the vertex that has an obstacle
 	private Graph graph;
-	private List<Vertex> order = new ArrayList<>(); // list of step 
-//	private TreeSet<Pair> listCreate = new TreeSet<>(); // list of created vertex during the routing
+	private List<Vertex> order = new ArrayList<>(); // list of step
 	private List<Pair> listCreate = new ArrayList<>();
-	private List<Pair> listSeen = new ArrayList<>();  // List of developed vertex during the routing 
-	private Vertex goal; // inform the point of arrive 
-	private Vertex start; // inform the point of departure  
+	private List<Pair> listSeen = new ArrayList<>(); // List of developed vertex during the routing
+	private Vertex goal; // inform the point of arrive
+	private Vertex start; // inform the point of departure
 	private int rateOfRouting = 0;
 	private List<Vertex> orientation;
-	
+
 	/**
-	 * @param graph : the map 
-	 * @param goal : inform the point of arrive
-	 * @param start : inform the point of departure
+	 * @param graph
+	 *            : the map
+	 * @param goal
+	 *            : inform the point of arrive
+	 * @param start
+	 *            : inform the point of departure
 	 */
 	public Astar(Graph graph, Vertex goal, Vertex start) {
 		this.graph = graph;
 		this.goal = goal;
 		this.start = start;
-		this.start.setFather(start); // on initialise son pere 
+		this.start.setFather(start); // on initialise son pere
 		this.start.setStarting(true);
 		this.goal.setGoal(true);
 	}
-	
-	
+
 	/**
-	 * @param v : the vertex to compare with an objective 
+	 * @param v
+	 *            : the vertex to compare with an objective
 	 * @return : true if its same
 	 */
-	private boolean isGoal (Vertex v) {
+	private boolean isGoal(Vertex v) {
 		return this.goal.compareVertex(v);
 	}
-	
+
 	/**
 	 * @return : list of direction, from the beginig at the destination
 	 */
-	public List<Direction> getDirectionOrder () {
+	public List<Direction> getDirectionOrder() {
 		List<Direction> ret = new ArrayList<>();
 		for (Vertex v : order) {
 			ret.add(v.getDirection());
 		}
 		return ret;
 	}
-	
+
 	/**
-	 * @param v : the vertex who want to calculate the <heuristique> 
-	 * @return : the worth of this vertex 
+	 * @param v
+	 *            : the vertex who want to calculate the <heuristique>
+	 * @return : the worth of this vertex
 	 */
-	private int heuristique (Vertex v) {
-		List<Vertex> adjFilter = graph.getAdjacentFilter(v);
-		int rate = adjFilter.get(0).getWeight();
+	private int heuristique(Vertex v) {
+		List<Vertex> adjFilter = getAdjacentFilter(v);
 		if (isGoal(v)) {
 			return 0;
-		}else if (v.isObstacle()) {
-			return -INFINI;
-		}else {
-			for (Vertex vertex : adjFilter) {
-				if (vertex.getWeight() < rate) {
-					rate = vertex.getWeight();
+		} else {
+			if (v.isObstacle()) {
+				return INFINI;
+			} else {
+				int w = 0;//adjFilter.get(0).getWeight();
+				for (Vertex vertex : adjFilter) {
+					if (vertex.getWeight() < w) {
+						w += vertex.getWeight();
+					}
 				}
+				return w + v.getWeight();
 			}
-			return rate+v.getWeight();
 		}
 	}
-	
+
 	/**
-	 * @param v : the vertex who want to calculate the rate
+	 * @param v
+	 *            : the vertex who want to calculate the rate
 	 * @return : the rate of this vertex
 	 */
-	private int eval (Vertex v) {
-		return v.getRate()+heuristique(v);
+	private int eval(Vertex v) {
+		return v.getRate() + heuristique(v);
 	}
-	
+
 	private void addfirt(Pair p) {
 		if (listCreate.isEmpty()) {
 			listCreate.add(p);
 			return;
 		}
-		for(int i = 0; i < listCreate.size(); i++) {
-			if (p.getRate() < listCreate.get(i).getRate()) {
-				listCreate.add(i,p);
-				return;
+		if (!p.getV().equals(start)) { // car on ferrait un detour inutile
+			for (int i = 0; i <= listCreate.size(); i++) {
+				if (i == listCreate.size()) {// cas ou on tous parcourus à optimiser au cas ou
+					listCreate.add(i, p);
+					return;
+				} else {
+					if (p.getRate() < listCreate.get(i).getRate()) {
+						listCreate.add(i, p);
+						return;
+					}
+				}
 			}
 		}
 	}
-	
+
+	private List<Vertex> getVoisinInvFace(List<Vertex> listFace, List<Vertex> adj) {
+		List<Vertex> ret = new ArrayList<>();
+		for (Vertex vertex : adj) {
+			if (!listFace.contains(vertex)) {
+				ret.add(vertex);
+			}
+		}
+		return ret;
+	}
+
+	/**
+	 * @param v
+	 *            : vertex who we want get the filter adjacent
+	 * @param voisinFace
+	 * @return : the vertexes adjacent to v and who haven't a same father as v
+	 */
+	public List<Vertex> getAdjacentFilter(Vertex v) {
+		Vertex father = v.getFather();
+		List<Vertex> filter = new ArrayList<>();
+		List<Vertex> adj = graph.getAdjacent(v);
+		List<Vertex> voisinFace = father.getVoisinsFace();
+		if (v.isObstacle()) {
+			v.setVoisinsFace(adj);
+			return adj;
+		}
+		if (!voisinFace.contains(v)) { // on est dans le cas ou le fis est ne fait pas face au pere
+			voisinFace = getVoisinInvFace(voisinFace, graph.getAdjacent(father));
+		}
+		for (Vertex vertex : adj) {
+			if (!voisinFace.contains(vertex) && !vertex.equals(father)) {
+				vertex.setRate(v.getRate() + vertex.getWeight());
+				filter.add(vertex);
+			}
+		}
+		v.setVoisinsFace(filter);
+		return filter;
+	}
+
 	private void putAdjStarting(List<Vertex> adj, List<Vertex> orientation) {
 		Pair p;
-//		graph.printAdjacent(orientation);
+		start.setVoisinsFace(orientation);
 		for (Vertex vertex : adj) {
 			if (orientation.contains(vertex)) {
 				vertex.setRate(vertex.getWeight());
-//				System.out.println("s "+vertex.getNameV()+" rate "+vertex.getRate());
+			} else {
+				vertex.setRate(vertex.getWeight() + vertex.getFather().getWeight());
 			}
 			p = new Pair(vertex, eval(vertex));
 			addfirt(p);
 		}
 	}
-	
+
 	/**
-	 * @param adj : list of vertex adjacent
+	 * @param adj
+	 *            : list of vertex adjacent
 	 */
 	private void putAdj(List<Vertex> adj) {
 		Pair p;
@@ -124,51 +175,48 @@ public class Astar {
 			p = new Pair(vertex, eval(vertex));
 			boolean find = false;
 			for (Pair pair : listSeen) {
-				if (pair.getV().getNameV() == vertex.getNameV() &&
-						pair.getV().getRate()+pair.getV().getWeight() <
-						vertex.getRate()+vertex.getWeight()) {
-						find = true;
-						break; // on arrete la boucle 
+				if (pair.getV().equals(vertex)) {
+					find = true;
+					break; // on arrete la boucle
 				}
 			}
+
 			if (!find) {
 				addfirt(p);
 			}
 		}
 	}
-	
+
 	/**
-	 * @return : the first element in the list create 
+	 * @return : the first element in the list create
 	 */
 	private Pair getFirst() {
 		if (!listCreate.isEmpty()) {
-			Pair p = listCreate.get(0);
-			listCreate.remove(p);
-			return p;
+			return listCreate.remove(0);
 		}
 		return null;
 	}
-	
-	
+
 	/**
 	 * modify the list of order, insert the different step to attain the destination
-	 * @param v : the goal 
+	 * 
+	 * @param v
+	 *            : the goal
 	 */
-	private void constOrder(Vertex  v) {
+	private void constOrder(Vertex v) {
 		boolean go = true;
 		Vertex vertex;
 		Vertex oldVertex;
 		order.add(0, v);
 		rateOfRouting = v.getWeight();
 		vertex = v;
-		while(go) {
+		while (go) {
 			oldVertex = vertex;
 			vertex = vertex.getFather();
 			if (!vertex.getFather().compareVertex(vertex)) {
 				order.add(0, vertex);
 				rateOfRouting += vertex.getWeight();
-//				System.out.println("r "+vertex.getRate()+" s "+vertex.getNameV());
-			}else {
+			} else {
 				if (!orientation.contains(oldVertex)) {
 					rateOfRouting += vertex.getRate();
 				}
@@ -177,33 +225,34 @@ public class Astar {
 		}
 	}
 
-	
 	/**
-	 * the Astar algorithm finds a path to the goal with using an evaluation function
+	 * the Astar algorithm finds a path to the goal with using an evaluation
+	 * function
 	 */
 	public void aStar(List<Vertex> orientation) {
 		if (start.equals(goal)) { // when the goal and the starting are same
 			rateOfRouting = start.getRate();
 			return;
 		}
+
 		this.orientation = orientation;
 		List<Vertex> adjcent = graph.getAdjacent(start);
 		putAdjStarting(adjcent, orientation);
 		Pair p;
 		boolean go = true;
 		do {
+//			for (Pair pair : listCreate) {
+//				System.out.println(pair);
+//			}
 			p = getFirst();
-			listSeen.add(p); // on ajoute dans la liste des vues 
-//			System.out.println("on choisis : "+p);;
+			listSeen.add(p); // on ajoute dans la liste des vues
+//			System.out.println("on a choisis \n"+p.getV());
 			if (isGoal(p.getV())) {
-//				rateOfRouting = p.getRate();
 				constOrder(p.getV());
 				this.goal = p.getV();
 				go = false;
-			}else {
-				//je cree les fils de ce nouveau sommet choisi
-				adjcent = graph.getAdjacentFilter(p.getV());
-//				adjcent = graph.getAdjacent(p.getV()); // je garde ma premiere idee
+			} else {
+				adjcent = getAdjacentFilter(p.getV());
 				putAdj(adjcent); // j'ajoute ça dans la liste des creer
 			}
 		} while (go);
@@ -216,7 +265,6 @@ public class Astar {
 		return goal;
 	}
 
-
 	/**
 	 * @return the rateOfRouting
 	 */
@@ -226,36 +274,44 @@ public class Astar {
 
 	public static void main(String[] args) {
 		Graph g = new Graph("graphe partiel", CreatGraph.mapTest());
-//		Vertex I = new Vertex("I", 2, 104, true, Direction.STRAIGHT);
-		Vertex A = new Vertex("A", 0, 10, false, Direction.STRAIGHT);
-//		Vertex A = new Vertex("A", 0, 2, true, Direction.STRAIGHT);
-		for (Vertex v : g.getVertex()) {
-			Astar as = new Astar(g, v, A);
-//			as.aStar();
-//			System.out.println("de A "+v.getNameV()+" cout de : "+as.getRateOfRouting()+
-//					"  ensemble de commande :"+as.getDirectionOrder());
+		// Vertex I = new Vertex("I", 2, 104, true, Direction.STRAIGHT);
+		Vertex goal = new Vertex("F", 0, 10, false, Direction.STRAIGHT);
+		Vertex star = new Vertex("A", 0, 10, false, Direction.STRAIGHT);
+		List<Vertex> dir = new ArrayList<>();
+		dir.add(new Vertex("B", 0, 15, false, Direction.LEFT));
+		dir.add(new Vertex("C", 0, 8, false, Direction.RIGHT));
+//		Astar as = new Astar(g, goal, star);
+//		as.aStar(dir);
+//		g.printAdjacent(as.getOrder());
+		
+		for (Vertex vertex : g.getVertex()) {
+			Astar as = new Astar(g, vertex, star);
+			as.aStar(dir);
+			System.out.println("de "+star.getNameV()+" a "+vertex.getNameV());
+			g.printAdjacent(as.getOrder());
+			System.out.println("avec un cout de "+as.getRateOfRouting());
 		}
+
 	}
-	
-
-
 
 	/**
 	 * @author MMadi
 	 *
 	 */
-	private class Pair implements Comparable<Pair>{
+	private class Pair implements Comparable<Pair> {
 		private Vertex v;
 		private int rate;
-		
+
 		public Pair(Vertex v, int rate) {
-			this.v = v; this.rate = rate;
+			this.v = v;
+			this.rate = rate;
 		}
-		
+
 		public boolean equals(Object obj) {
 			if (obj != null && obj.getClass() == this.getClass()) {
-				Pair p = (Pair)obj;
-				return (this.v.getNameV().equals(p.v.getNameV()) && this.rate == p.rate);
+				Pair p = (Pair) obj;
+				return (this.v.getNameV().equals(p.v.getNameV()));
+				// return (this.v.getNameV().equals(p.v.getNameV()) && this.rate == p.rate);
 			}
 			return false;
 		}
@@ -264,7 +320,7 @@ public class Astar {
 		public int compareTo(Pair o) {
 			return this.rate - o.rate;
 		}
-		
+
 		/**
 		 * @return the v
 		 */
@@ -278,16 +334,13 @@ public class Astar {
 		public int getRate() {
 			return rate;
 		}
-		
+
 		@Override
 		public String toString() {
-			return v.getNameV()+"|"+ rate;
+			return v.getNameV() + "|" + rate;
 		}
 
 	}
-
-
-
 
 	/**
 	 * @return the order
@@ -295,5 +348,5 @@ public class Astar {
 	public List<Vertex> getOrder() {
 		return order;
 	}
-	
+
 }

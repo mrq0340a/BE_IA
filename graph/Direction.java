@@ -5,5 +5,5 @@ package graph;
  *
  */
 public enum Direction {
-	LEFT, RIGH, STRAIGHT;
+	LEFT, RIGHT, STRAIGHT;
 }

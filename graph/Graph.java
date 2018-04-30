@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.Set;
 
 /**
@@ -40,45 +39,19 @@ public class Graph {
 	 * @return
 	 */
 	public List<Vertex> getAdjacent(Vertex v) {
-		Vertex subVertex = new Vertex(v.getNameV(), v.getJunction(), 
-				v.getWeight(), v.isObstacle(), Direction.STRAIGHT);
-		subVertex.setFather(v.getFather());
 		List<Vertex> ret = new ArrayList<>();
-		for(Vertex vertex : graph.get(subVertex)) {
-			vertex.setRate(v.getRate()+vertex.getWeight());
-			if (vertex.getFather() == null) {
-				vertex.setFather(v);
-			}
-			ret.add(vertex);
+		for(Vertex vertex : graph.get(v)) {
+			Vertex newV = new Vertex(vertex.getNameV(), vertex.getJunction(), 
+					vertex.getWeight(), vertex.isObstacle(), vertex.getDirection());
+			newV.setFather(v);
+			ret.add(newV);
+			
 		}
 		return ret;
 	}
 
-	/**
-	 * @param v : vertex who we want get the filter adjacent 
-	 * @return : the vertexes adjacent to v and who haven't a same father as v
-	 */
-	public List<Vertex> getAdjacentFilter(Vertex v) {
-		Vertex father = v.getFather();
-		List<Vertex> filter = new ArrayList<>();
-		List<Vertex> adj = getAdjacent(v);
-		List<Vertex> adjFather = getAdjacent(father);
-		for (Vertex vertex : adj) {
-			if (adj.size() > 2) {
-				if (!adjFather.contains(vertex) && (!father.getNameV().equals(vertex.getNameV()))) {
-					vertex.setRate(v.getRate() + vertex.getWeight());
-					filter.add(vertex);
-				}
-			} else {
-				if (!father.getNameV().equals(vertex.getNameV())) {
-					vertex.setRate(v.getRate() + vertex.getWeight()); // le cout g chemin parcouru jusqu'a la
-					filter.add(vertex);
-				}
-			}
-
-		}
-		return filter;
-	}
+	
+	
 	
 	/**
 	 * @return
@@ -110,13 +83,36 @@ public class Graph {
 		}
 	}
 
-//	public static void main(String[] args) {
-//		Graph g = new Graph("graphe partiel", CreatGraph.halfMap());
-//		Set<Vertex> sommet = g.getVertex();
-//		for (Vertex vertex : sommet) {
-//			System.out.println("--------" + vertex.getNameV() + "---------");
-//			g.printAdjacent(g.getAdjacent(vertex));
+	public static void main(String[] args) {
+		Graph g = new Graph("graphe partiel", CreatGraph.compet1());
+		List<Vertex> voisinB = g.getAdjacent(new Vertex("B", 0, 5, false,  Direction.STRAIGHT));
+		List<Vertex> voisinC = g.getAdjacent(new Vertex("C", 0, 2, false,  Direction.STRAIGHT));
+		Vertex AC = null;
+		Vertex AB = null;
+		for (Vertex vertex : voisinB) {
+			if (vertex.getNameV().equals("A")) {
+				AB = vertex;
+			}
+		}
+		
+		for (Vertex vertex : voisinC) {
+			if (vertex.getNameV().equals("A")) {
+				AC = vertex;
+			}
+		}
+		AB.setFather(AC);
+//		voisinB = g.getAdjacent(new Vertex("B", 0, 5, false,  Direction.STRAIGHT));
+		
+		System.out.println(AC);
+		System.out.println(AB);
+		
+		for (Vertex vertex : voisinB) {
+			System.err.println(vertex);
+		}
+//		
+//		for (Vertex vertex : voisinC) {
+//			System.out.println(vertex);
 //		}
-//	}
+	}
 
 }

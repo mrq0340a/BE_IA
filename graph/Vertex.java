@@ -1,5 +1,7 @@
 package graph;
 
+import java.util.List;
+
 import graph.Direction;
 
 public class Vertex implements Comparable<Vertex> {
@@ -10,7 +12,9 @@ public class Vertex implements Comparable<Vertex> {
 	private int junction;
 	private boolean occupy = false;
 	private int weight;
-
+	
+	//test 
+	private List<Vertex> voisinsFace;
 
 	private boolean obstacle;
 	private Vertex father;
@@ -33,12 +37,6 @@ public class Vertex implements Comparable<Vertex> {
 		this.rate = weight;
 	}
 	
-	/**
-	 * @param weight the weight to set
-	 */
-	public void setWeight(int weight) {
-		this.weight = weight;
-	}
 	/**
 	 * @return the weight
 	 */
@@ -105,9 +103,7 @@ public class Vertex implements Comparable<Vertex> {
 		if (obj != null && obj.getClass() == this.getClass()) {
 			Vertex cmp = (Vertex) obj;
 			return this.weight == cmp.getWeight() &&
-			this.nameV.equals(cmp.getNameV());  //&& 
-//			this.direction == cmp.getDirection()
-			
+			this.nameV.equals(cmp.getNameV());
 		}
 		return false;
 	}
@@ -128,7 +124,7 @@ public class Vertex implements Comparable<Vertex> {
 
 	@Override
 	public int hashCode() {
-		return 31*nameV.hashCode()+rate;
+		return 31*nameV.hashCode()+weight;
 	}
 	
 	/**
@@ -194,5 +190,19 @@ public class Vertex implements Comparable<Vertex> {
 	@Override
 	public int compareTo(Vertex o) {
 		return weight-o.getWeight();
+	}
+
+	/**
+	 * @return the voisinsFace
+	 */
+	public List<Vertex> getVoisinsFace() {
+		return voisinsFace;
+	}
+
+	/**
+	 * @param voisinsFace the voisinsFace to set
+	 */
+	public void setVoisinsFace(List<Vertex> voisinsFace) {
+		this.voisinsFace = voisinsFace;
 	}
 }
