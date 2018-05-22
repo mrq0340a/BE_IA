@@ -5,7 +5,10 @@ import lejos.nxt.LightSensor;
 import lejos.nxt.NXTRegulatedMotor;
 import lejos.nxt.SensorPort;
 import lejos.robotics.navigation.DifferentialPilot;
-
+/**
+ * @author MMADI
+ *
+ */
 public class TestMarking {
 	protected final static int DefaultMotorSpeed = 300;
 	protected static final int lightThresholdNormalize = 487;

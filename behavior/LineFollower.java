@@ -1,6 +1,7 @@
 package behavior;
 
 import lejos.nxt.LightSensor;
+import lejos.nxt.Motor;
 import lejos.nxt.NXTRegulatedMotor;
 import lejos.nxt.SensorPort;
 import lejos.robotics.navigation.DifferentialPilot;
@@ -8,6 +9,10 @@ import lejos.robotics.subsumption.Behavior;
 import lejos.util.PIDController;
 import lejos.util.PilotProps;
 
+/**
+ * @author MMADI
+ *
+ */
 public class LineFollower implements Behavior {
 	protected final static int DefaultMotorSpeed = 300;
 	protected static final int lightThresholdNormalize = 487;
@@ -22,8 +27,8 @@ public class LineFollower implements Behavior {
 	private NXTRegulatedMotor lftMotor;
 	private NXTRegulatedMotor rgtMotor;
 	private LightSensor lftLight, rgtLight;
-//	private DifferentialPilot pilote;
-	
+	// private DifferentialPilot pilote;
+
 	private boolean suppress = false;
 
 	public LineFollower(NXTRegulatedMotor rgtMotor, NXTRegulatedMotor lftMotor, SensorPort rgtLight,
@@ -32,7 +37,7 @@ public class LineFollower implements Behavior {
 		this.rgtMotor = rgtMotor;
 		this.lftLight = new LightSensor(lftLight);
 		this.rgtLight = new LightSensor(rgtLight);
-//		pilote = new DifferentialPilot(56, 106, rgtMotor, lftMotor);
+		// pilote = new DifferentialPilot(56, 106, rgtMotor, lftMotor);
 	}
 
 	private boolean isStrip() {
@@ -41,112 +46,110 @@ public class LineFollower implements Behavior {
 	}
 
 	private void lineFollower2() {
-		PIDController pid1 = new PIDController(430, 10);
-		PIDController pid2 = new PIDController(430, 10);
-		pid1.setPIDParam(PIDController.PID_KD, 3.0f);
-//		pid1.setPIDParam(PIDController.PID_KI, 0.005f);
-//		pid1.setPIDParam(PIDController.PID_KP, 5f);
+		PIDController pid1 = new PIDController(390, 1);
+		PIDController pid2 = new PIDController(390, 1);
+		pid1.setPIDParam(PIDController.PID_KD, 10.0f);
+		pid1.setPIDParam(PIDController.PID_KI, 0.0009f);
+		pid1.setPIDParam(PIDController.PID_KP, 2f);
 
-		pid2.setPIDParam(PIDController.PID_KD, 3.0f);
-//		pid2.setPIDParam(PIDController.PID_KI, 0.005f);
-//		pid2.setPIDParam(PIDController.PID_KP, 5f);
+		pid2.setPIDParam(PIDController.PID_KD, 10.0f);
+		pid2.setPIDParam(PIDController.PID_KI, 0.0009f);
+		pid2.setPIDParam(PIDController.PID_KP, 2f);
 
 		boolean go = true;
-		while (go) {
-			int speedDelta1 = pid1.doPID(lftLight.readNormalizedValue());
-			int speedDelta2 = pid2.doPID(rgtLight.readNormalizedValue());
-
-			if (lftLight.readNormalizedValue() <= lightThresholdNormalize
-					|| rgtLight.readNormalizedValue() <= lightThresholdNormalize) {
-				if (lftLight.readNormalizedValue() > lightThresholdNormalize) {
-					lftMotor.setSpeed(DefaultMotorSpeed + speedDelta1);
-					rgtMotor.setSpeed(DefaultMotorSpeed - speedDelta1);
-				} else if (rgtLight.readNormalizedValue() > lightThresholdNormalize) {
+		if (!isStrip()) {
+			while (go) {
+				int lv1 = lftLight.readNormalizedValue();
+				int lv2 = rgtLight.readNormalizedValue();
+				int speedDelta1 = pid1.doPID(lv1);
+				int speedDelta2 = pid2.doPID(lv2);
+				if (lv1 < lightThresholdNormalize && lv2 > lightThresholdNormalize) {
+					rgtMotor.setSpeed(DefaultMotorSpeed + speedDelta1);
 					lftMotor.setSpeed(DefaultMotorSpeed - speedDelta2);
-					rgtMotor.setSpeed(DefaultMotorSpeed + speedDelta2);
-				} else {
-					if (speedDelta1 > speedDelta2) {
-						lftMotor.setSpeed(DefaultMotorSpeed + speedDelta1);
-						rgtMotor.setSpeed(DefaultMotorSpeed - speedDelta1);
-					} else {
-						lftMotor.setSpeed(DefaultMotorSpeed - speedDelta2);
-						rgtMotor.setSpeed(DefaultMotorSpeed + speedDelta2);
-					}
+				} else if (lv1 > lightThresholdNormalize && lv2 < lightThresholdNormalize) {
+					lftMotor.setSpeed(DefaultMotorSpeed + speedDelta2);
+					rgtMotor.setSpeed(DefaultMotorSpeed - speedDelta1);
+				} else if (lv1 < lightThresholdNormalize && lv2 < lightThresholdNormalize) {
+					rgtMotor.setSpeed(DefaultMotorSpeed + speedDelta1);
+					lftMotor.setSpeed(DefaultMotorSpeed + speedDelta2);
 				}
+
 				lftMotor.forward();
 				rgtMotor.forward();
-			}else {
-				go = false;
-//				pilote.stop();
-//				lftMotor.setSpeed(DefaultMotorSpeed);
-//				rgtMotor.setSpeed(DefaultMotorSpeed);
-			}
-			
-			
-			if (isStrip()) {
-				go = false;
-//				lftMotor.stop();
-//				rgtMotor.stop();
-				
-				suppress = true;
+
+				if (isStrip()) {
+					go = false;
+					lftMotor.stop();
+					rgtMotor.stop();
+
+					suppress = true;
+				}
 			}
 		}
 
 	}
 
-	private void lineFollower1() {
-		boolean go = true;
-		// ArrayList<Integer> lastValues = new ArrayList<>();
-		while (go) {
-			if (lftLight.readNormalizedValue() > lightThresholdNormalize) {
-				lftMotor.setSpeed(DefaultMotorSpeed * slowDownPercent*0);
-			} else if (rgtLight.readNormalizedValue() > lightThresholdNormalize) {
-				rgtMotor.setSpeed(DefaultMotorSpeed * slowDownPercent*0);
+	public void mouve () {
+		PIDController pid = new PIDController(400, 10);
+		pid.setPIDParam(PIDController.PID_KD, 2.0f);
+		pid.setPIDParam(PIDController.PID_KI, 0.001f);
+		pid.setPIDParam(PIDController.PID_KP, 0.6f);
+		for (int i = 0; i < 70; i++) {
+			int speedDelta = pid.doPID(lftLight.getNormalizedLightValue());
+			int speedDelta1 = pid.doPID(rgtLight.getNormalizedLightValue());
+			if (i < 70) {
+				if (lftLight.getNormalizedLightValue() > lightThresholdNormalize) {
+					lftMotor.setSpeed(motorSpeedTurn + speedDelta);
+					rgtMotor.setSpeed(motorSpeedTurn - speedDelta);
+				}else {
+					lftMotor.setSpeed(motorSpeedTurn - speedDelta1);
+					rgtMotor.setSpeed(motorSpeedTurn + speedDelta1);
+				}
+				
 			} else {
-				lftMotor.setSpeed(DefaultMotorSpeed);
-				rgtMotor.setSpeed(DefaultMotorSpeed);
+				lftMotor.setSpeed(motorSpeedTurn);
+				rgtMotor.setSpeed(motorSpeedTurn);
 			}
 			lftMotor.forward();
 			rgtMotor.forward();
-			if (isStrip()) {
-				go = false;
-				lftMotor.stop();
-				rgtMotor.stop();
-				suppress = true;
-			}
 		}
+		
+		lftMotor.flt();
+		rgtMotor.stop();
 	}
-
+	
 	public void lineFollower() {
 		boolean go = true;
-		while (go) {
-			if (lftLight.getNormalizedLightValue() >= highThreshold) {
-				lftMotor.setSpeed((int) (DefaultMotorSpeed * 0.1));
-			} else if (lftLight.getNormalizedLightValue() > lowThreshold
-					&& lftLight.getNormalizedLightValue() < highThreshold) {
-				lftMotor.setSpeed(DefaultMotorSpeed
-						* ((lftLight.getNormalizedLightValue() - lowThreshold) / (highThreshold - lowThreshold)));
-			} else {
-				lftMotor.setSpeed(DefaultMotorSpeed);
-			}
+		if (!isStrip()) {
+			while (go) {
+				if (lftLight.getNormalizedLightValue() >= highThreshold) {
+					lftMotor.setSpeed((int) (DefaultMotorSpeed * 0.1));
+				} else if (lftLight.getNormalizedLightValue() > lowThreshold
+						&& lftLight.getNormalizedLightValue() < highThreshold) {
+					lftMotor.setSpeed(DefaultMotorSpeed
+							* ((lftLight.getNormalizedLightValue() - lowThreshold) / (highThreshold - lowThreshold)));
+				} else {
+					lftMotor.setSpeed(DefaultMotorSpeed);
+				}
 
-			if (rgtLight.getNormalizedLightValue() >= highThreshold) {
-				rgtMotor.setSpeed(0);
-			} else if (rgtLight.getNormalizedLightValue() > lowThreshold
-					&& rgtLight.getNormalizedLightValue() < highThreshold) {
-				rgtMotor.setSpeed(DefaultMotorSpeed
-						* ((rgtLight.getNormalizedLightValue() - lowThreshold) / (highThreshold - lowThreshold)));
-			} else {
-				rgtMotor.setSpeed(DefaultMotorSpeed);
-			}
+				if (rgtLight.getNormalizedLightValue() >= highThreshold) {
+					rgtMotor.setSpeed(0);
+				} else if (rgtLight.getNormalizedLightValue() > lowThreshold
+						&& rgtLight.getNormalizedLightValue() < highThreshold) {
+					rgtMotor.setSpeed(DefaultMotorSpeed
+							* ((rgtLight.getNormalizedLightValue() - lowThreshold) / (highThreshold - lowThreshold)));
+				} else {
+					rgtMotor.setSpeed(DefaultMotorSpeed);
+				}
 
-			lftMotor.forward();
-			rgtMotor.forward();
-			if (isStrip()) {
-				go = false;
-				lftMotor.stop();
-				rgtMotor.stop();
-				suppress = true;
+				lftMotor.forward();
+				rgtMotor.forward();
+				if (isStrip()) {
+					go = false;
+					lftMotor.stop();
+					rgtMotor.stop();
+					suppress = true;
+				}
 			}
 		}
 	}
@@ -165,5 +168,24 @@ public class LineFollower implements Behavior {
 	@Override
 	public void suppress() {
 		suppress = true;
+	}
+	
+	/**
+	 * @return the suppress
+	 */
+	synchronized public boolean isSuppress() {
+		return suppress;
+	}
+
+	/**
+	 * @param suppress the suppress to set
+	 */
+	synchronized public void setSuppress(boolean suppress) {
+		this.suppress = suppress;
+	}
+	
+	public static void main(String[] args) {
+		LineFollower l = new LineFollower(Motor.A, Motor.C, SensorPort.S1, SensorPort.S4);
+		l.mouve();
 	}
 }

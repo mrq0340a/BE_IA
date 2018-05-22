@@ -4,7 +4,10 @@ import lejos.nxt.LightSensor;
 import lejos.nxt.Motor;
 import lejos.nxt.NXTRegulatedMotor;
 import lejos.nxt.SensorPort;
-
+/**
+ * @author MMADI
+ *
+ */
 public class Cst {
 	protected final static int DefaultMotorSpeed = 400;
 	protected static final int lightThresholdNormalize = 487;

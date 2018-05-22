@@ -4,6 +4,10 @@ import lejos.nxt.NXTRegulatedMotor;
 import lejos.robotics.navigation.DifferentialPilot;
 import lejos.robotics.subsumption.Behavior;
 
+/**
+ * @author MMADI
+ *
+ */
 public class HalfTurn implements Behavior {
 	private boolean suppress = true; 
 	private DifferentialPilot pilote;

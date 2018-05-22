@@ -6,6 +6,10 @@ import lejos.nxt.SensorPort;
 import lejos.robotics.navigation.DifferentialPilot;
 import lejos.robotics.subsumption.Behavior;
 
+/**
+ * @author MMADI
+ *
+ */
 public class Straight implements Behavior {
 
 	protected static final int DefaultMotorSpeed = 500;

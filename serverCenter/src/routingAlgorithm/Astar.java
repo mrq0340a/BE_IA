@@ -1,7 +1,9 @@
 package routingAlgorithm;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Scanner;
 
 import graph.CreatGraph;
 import graph.Direction;
@@ -122,14 +124,30 @@ public class Astar {
 		}
 		return ret;
 	}
-
+	
+	
+	private List<Vertex> filter(List<Vertex> adj) {
+		List<Vertex> array = new ArrayList<>();
+		
+		for (int i = 0; i < adj.size(); i++) {
+		    for (int j = 0; j < adj.size(); j++) {
+		    	if (i != j && adj.get(i).equals(adj.get(j))) {
+					array.add(adj.get(i));
+					array.add(adj.get(j));
+					return array;
+				}
+			}
+		}
+		return array;
+	}
+	
 	/**
 	 * @param v
 	 *            : vertex who we want get the filter adjacent
 	 * @param voisinFace
 	 * @return : the vertexes adjacent to v and who haven't a same father as v
 	 */
-	public List<Vertex> getAdjacentFilter(Vertex v) {
+	private List<Vertex> getAdjacentFilter(Vertex v) {
 		Vertex father = v.getFather();
 		List<Vertex> filter = new ArrayList<>();
 		List<Vertex> adj = graph.getAdjacent(v);
@@ -145,6 +163,20 @@ public class Astar {
 			if (!voisinFace.contains(vertex) && !vertex.equals(father)) {
 				vertex.setRate(v.getRate() + vertex.getWeight());
 				filter.add(vertex);
+			}
+		}
+		
+		// le cas d'une boucle 
+		if (filter.size() == 1) {
+			Vertex temp = filter.get(0);
+//			Scanner sc = new Scanner(System.in);
+//			System.out.println("sommet en question "+temp.getNameV()+"\nest je suis "+v);
+//			graph.printAdjacent(adj);
+//			sc.nextInt();
+			for (Vertex vertex : filter(adj)) {
+				if (temp.getDirection() != vertex.getDirection()){
+					filter.add(vertex);
+				}
 			}
 		}
 		v.setVoisinsFace(filter);
@@ -208,17 +240,17 @@ public class Astar {
 		Vertex vertex;
 		Vertex oldVertex;
 		order.add(0, v);
-		rateOfRouting = v.getWeight();
+//		rateOfRouting = v.getRate();
 		vertex = v;
 		while (go) {
 			oldVertex = vertex;
 			vertex = vertex.getFather();
 			if (!vertex.getFather().compareVertex(vertex)) {
 				order.add(0, vertex);
-				rateOfRouting += vertex.getWeight();
+//				rateOfRouting += vertex.getWeight();
 			} else {
 				if (!orientation.contains(oldVertex)) {
-					rateOfRouting += vertex.getRate();
+//					rateOfRouting += vertex.getRate();
 				}
 				go = false; // stop while
 			}
@@ -241,15 +273,12 @@ public class Astar {
 		Pair p;
 		boolean go = true;
 		do {
-//			for (Pair pair : listCreate) {
-//				System.out.println(pair);
-//			}
 			p = getFirst();
-			listSeen.add(p); // on ajoute dans la liste des vues
-//			System.out.println("on a choisis \n"+p.getV());
+			listSeen.add(p);
 			if (isGoal(p.getV())) {
 				constOrder(p.getV());
 				this.goal = p.getV();
+				rateOfRouting = this.goal.getRate();
 				go = false;
 			} else {
 				adjcent = getAdjacentFilter(p.getV());
@@ -273,24 +302,27 @@ public class Astar {
 	}
 
 	public static void main(String[] args) {
-		Graph g = new Graph("graphe partiel", CreatGraph.mapTest());
+		Graph g = new Graph("graphe partiel", CreatGraph.compet1());
 		// Vertex I = new Vertex("I", 2, 104, true, Direction.STRAIGHT);
-		Vertex goal = new Vertex("F", 0, 10, false, Direction.STRAIGHT);
-		Vertex star = new Vertex("A", 0, 10, false, Direction.STRAIGHT);
+		Vertex goal = new Vertex("J", 0, 5, false, Direction.STRAIGHT);
+		Vertex star = new Vertex("L", 0, 13, false, Direction.STRAIGHT);
 		List<Vertex> dir = new ArrayList<>();
-		dir.add(new Vertex("B", 0, 15, false, Direction.LEFT));
-		dir.add(new Vertex("C", 0, 8, false, Direction.RIGHT));
-//		Astar as = new Astar(g, goal, star);
-//		as.aStar(dir);
+		dir.add(new Vertex("J", 0, 5, false, Direction.LEFT));
+		dir.add(new Vertex("K", 0, 5, false, Direction.RIGHT));
+		Astar as = new Astar(g, goal, star);
+		as.aStar(dir);
 //		g.printAdjacent(as.getOrder());
-		
-		for (Vertex vertex : g.getVertex()) {
-			Astar as = new Astar(g, vertex, star);
-			as.aStar(dir);
-			System.out.println("de "+star.getNameV()+" a "+vertex.getNameV());
-			g.printAdjacent(as.getOrder());
-			System.out.println("avec un cout de "+as.getRateOfRouting());
-		}
+		System.out.println(as.getRateOfRouting());
+		System.out.println(as.getGoal().getFather().getNameV());
+		System.out.println(as.getGoal().getVoisinsFace());
+//		System.out.println(as.getGoal().getFather().getFather().getVoisinsFace());
+//		for (Vertex vertex : g.getVertex()) {
+//			Astar as = new Astar(g, vertex, star);
+//			as.aStar(dir);
+//			System.out.println("de "+star.getNameV()+" a "+vertex.getNameV());
+//			g.printAdjacent(as.getOrder());
+//			System.out.println("avec un cout de "+as.getRateOfRouting());
+//		}
 
 	}
 

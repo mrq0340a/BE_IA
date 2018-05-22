@@ -1,17 +1,12 @@
 package behavior;
-
-import graph.CreatGraph;
-import graph.Graph;
-import lejos.nxt.Button;
-import lejos.nxt.LCD;
-import lejos.nxt.LightSensor;
 import lejos.nxt.Motor;
-import lejos.nxt.MotorPort;
-import lejos.nxt.NXTRegulatedMotor;
 import lejos.nxt.SensorPort;
 import lejos.robotics.subsumption.Behavior;
-import robot.Robot;
 
+/**
+ * @author MMADI
+ *
+ */
 public class TestBehavior {
 
 	public static void main(String[] args) throws InterruptedException {
@@ -28,6 +23,7 @@ public class TestBehavior {
 		TestMarking ts = new TestMarking(Motor.C, Motor.A, SensorPort.S1, SensorPort.S4);
 		Behavior[] bv = {linef, htur, turnL, turnR, strL, strR, jun};
 		linef.action();
+		turnL.action();
 //		ts.testMarking(); 
 //		turnR.action();
 //		linef.action();
