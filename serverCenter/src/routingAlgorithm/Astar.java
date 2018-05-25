@@ -169,10 +169,6 @@ public class Astar {
 		// le cas d'une boucle 
 		if (filter.size() == 1) {
 			Vertex temp = filter.get(0);
-//			Scanner sc = new Scanner(System.in);
-//			System.out.println("sommet en question "+temp.getNameV()+"\nest je suis "+v);
-//			graph.printAdjacent(adj);
-//			sc.nextInt();
 			for (Vertex vertex : filter(adj)) {
 				if (temp.getDirection() != vertex.getDirection()){
 					filter.add(vertex);
@@ -302,27 +298,19 @@ public class Astar {
 	}
 
 	public static void main(String[] args) {
-		Graph g = new Graph("graphe partiel", CreatGraph.compet1());
+		Graph g = new Graph("graphe partiel", CreatGraph.compet2());
 		// Vertex I = new Vertex("I", 2, 104, true, Direction.STRAIGHT);
-		Vertex goal = new Vertex("J", 0, 5, false, Direction.STRAIGHT);
-		Vertex star = new Vertex("L", 0, 13, false, Direction.STRAIGHT);
+		Vertex goal = new Vertex("L", 0, 13, false, Direction.STRAIGHT);
+		Vertex star = new Vertex("G", 0, 9, false, Direction.STRAIGHT);
 		List<Vertex> dir = new ArrayList<>();
-		dir.add(new Vertex("J", 0, 5, false, Direction.LEFT));
-		dir.add(new Vertex("K", 0, 5, false, Direction.RIGHT));
+		dir.add(new Vertex("F", 0, 9, false, Direction.LEFT));
+		dir.add(new Vertex("H", 0, 2, false, Direction.RIGHT));
 		Astar as = new Astar(g, goal, star);
 		as.aStar(dir);
-//		g.printAdjacent(as.getOrder());
-		System.out.println(as.getRateOfRouting());
-		System.out.println(as.getGoal().getFather().getNameV());
-		System.out.println(as.getGoal().getVoisinsFace());
-//		System.out.println(as.getGoal().getFather().getFather().getVoisinsFace());
-//		for (Vertex vertex : g.getVertex()) {
-//			Astar as = new Astar(g, vertex, star);
-//			as.aStar(dir);
-//			System.out.println("de "+star.getNameV()+" a "+vertex.getNameV());
-//			g.printAdjacent(as.getOrder());
-//			System.out.println("avec un cout de "+as.getRateOfRouting());
-//		}
+		for (Vertex vertex : as.getOrder()) {
+			System.out.println("sommet : "+vertex.getNameV());
+			g.printAdjacent(vertex.getVoisinsFace());
+		}
 
 	}
 

@@ -52,7 +52,7 @@ public class Turn implements Behavior {
 
 	public void turn() {
 		int i = 0;
-		pilote.travel(30);
+		pilote.travel(15);
 		boolean variation = rgtLight.readNormalizedValue() > lightThresholdNormalize;
 		boolean oldVariation;
 		boolean go = true;

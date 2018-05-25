@@ -86,7 +86,7 @@ public class RobotConnection implements Runnable {
 						m_dos.writeInt(toSend);
 						m_dos.flush();
 						returnedValue = m_dis.readInt(); // retour fin de tache
-//						System.out.println(m_nxt.name + " returned " + returnedValue);
+						System.out.println(m_nxt.name + " returned " + returnedValue);
 					}
 				}else {
 					Thread.sleep(3000); // pas sur de moi sur ce coup
@@ -157,7 +157,7 @@ public class RobotConnection implements Runnable {
 	/**
 	 * @return the order
 	 */
-	public List<Vertex> getOrder() {
+	public synchronized List<Vertex> getOrder() {
 		return order;
 	}
 
@@ -172,7 +172,7 @@ public class RobotConnection implements Runnable {
 	/**
 	 * @return the ordreH
 	 */
-	public List<Vertex> getOrdreH() {
+	public synchronized List<Vertex> getOrdreH() {
 		return ordreH;
 	}
 

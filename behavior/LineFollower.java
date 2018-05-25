@@ -46,15 +46,15 @@ public class LineFollower implements Behavior {
 	}
 
 	private void lineFollower2() {
-		PIDController pid1 = new PIDController(390, 1);
-		PIDController pid2 = new PIDController(390, 1);
-		pid1.setPIDParam(PIDController.PID_KD, 10.0f);
-		pid1.setPIDParam(PIDController.PID_KI, 0.0009f);
-		pid1.setPIDParam(PIDController.PID_KP, 2f);
+		PIDController pid1 = new PIDController(400, 10);
+		PIDController pid2 = new PIDController(400, 10);
+		pid1.setPIDParam(PIDController.PID_KD, 3.0f);
+		pid1.setPIDParam(PIDController.PID_KI, 0.001f);
+		pid1.setPIDParam(PIDController.PID_KP, 0.9f);
 
-		pid2.setPIDParam(PIDController.PID_KD, 10.0f);
-		pid2.setPIDParam(PIDController.PID_KI, 0.0009f);
-		pid2.setPIDParam(PIDController.PID_KP, 2f);
+		pid2.setPIDParam(PIDController.PID_KD, 3.0f);
+		pid2.setPIDParam(PIDController.PID_KI, 0.001f);
+		pid2.setPIDParam(PIDController.PID_KP, 0.9f);
 
 		boolean go = true;
 		if (!isStrip()) {
@@ -63,25 +63,25 @@ public class LineFollower implements Behavior {
 				int lv2 = rgtLight.readNormalizedValue();
 				int speedDelta1 = pid1.doPID(lv1);
 				int speedDelta2 = pid2.doPID(lv2);
-				if (lv1 < lightThresholdNormalize && lv2 > lightThresholdNormalize) {
-					rgtMotor.setSpeed(DefaultMotorSpeed + speedDelta1);
-					lftMotor.setSpeed(DefaultMotorSpeed - speedDelta2);
-				} else if (lv1 > lightThresholdNormalize && lv2 < lightThresholdNormalize) {
-					lftMotor.setSpeed(DefaultMotorSpeed + speedDelta2);
-					rgtMotor.setSpeed(DefaultMotorSpeed - speedDelta1);
-				} else if (lv1 < lightThresholdNormalize && lv2 < lightThresholdNormalize) {
-					rgtMotor.setSpeed(DefaultMotorSpeed + speedDelta1);
-					lftMotor.setSpeed(DefaultMotorSpeed + speedDelta2);
+				if (!isStrip()) {
+					if (lftLight.getNormalizedLightValue() > lightThresholdNormalize) {
+						lftMotor.setSpeed(motorSpeedTurn + speedDelta1);
+						rgtMotor.setSpeed(motorSpeedTurn - speedDelta1);
+					} else {
+						lftMotor.setSpeed(motorSpeedTurn + speedDelta2);
+						rgtMotor.setSpeed(motorSpeedTurn - speedDelta2);
+					}
+				}else {
+					go = false;
+					lftMotor.setSpeed(motorSpeedTurn);
+					rgtMotor.setSpeed(motorSpeedTurn);
 				}
-
 				lftMotor.forward();
 				rgtMotor.forward();
 
-				if (isStrip()) {
-					go = false;
+				if (!go) {
 					lftMotor.stop();
 					rgtMotor.stop();
-
 					suppress = true;
 				}
 			}
@@ -89,23 +89,23 @@ public class LineFollower implements Behavior {
 
 	}
 
-	public void mouve () {
+	public void mouve() {
 		PIDController pid = new PIDController(400, 10);
 		pid.setPIDParam(PIDController.PID_KD, 2.0f);
 		pid.setPIDParam(PIDController.PID_KI, 0.001f);
 		pid.setPIDParam(PIDController.PID_KP, 0.6f);
-		for (int i = 0; i < 70; i++) {
+		for (int i = 0; i < 90; i++) {
 			int speedDelta = pid.doPID(lftLight.getNormalizedLightValue());
 			int speedDelta1 = pid.doPID(rgtLight.getNormalizedLightValue());
-			if (i < 70) {
+			if (i < 90) {
 				if (lftLight.getNormalizedLightValue() > lightThresholdNormalize) {
 					lftMotor.setSpeed(motorSpeedTurn + speedDelta);
 					rgtMotor.setSpeed(motorSpeedTurn - speedDelta);
-				}else {
+				} else {
 					lftMotor.setSpeed(motorSpeedTurn - speedDelta1);
 					rgtMotor.setSpeed(motorSpeedTurn + speedDelta1);
 				}
-				
+
 			} else {
 				lftMotor.setSpeed(motorSpeedTurn);
 				rgtMotor.setSpeed(motorSpeedTurn);
@@ -113,11 +113,11 @@ public class LineFollower implements Behavior {
 			lftMotor.forward();
 			rgtMotor.forward();
 		}
-		
+
 		lftMotor.flt();
 		rgtMotor.stop();
 	}
-	
+
 	public void lineFollower() {
 		boolean go = true;
 		if (!isStrip()) {
@@ -169,7 +169,7 @@ public class LineFollower implements Behavior {
 	public void suppress() {
 		suppress = true;
 	}
-	
+
 	/**
 	 * @return the suppress
 	 */
@@ -178,14 +178,15 @@ public class LineFollower implements Behavior {
 	}
 
 	/**
-	 * @param suppress the suppress to set
+	 * @param suppress
+	 *            the suppress to set
 	 */
 	synchronized public void setSuppress(boolean suppress) {
 		this.suppress = suppress;
 	}
-	
+
 	public static void main(String[] args) {
 		LineFollower l = new LineFollower(Motor.A, Motor.C, SensorPort.S1, SensorPort.S4);
-		l.mouve();
+		l.lineFollower2();
 	}
 }

@@ -62,15 +62,27 @@ public class ServerCenter {
 																	// recherche
 			if (this.getGoals().isEmpty()) { // tous les victime ont été sauvé on sort du circuit
 				// TODO pour l'instant on arrete juste le programme
+				rb.setPosition(null);
+				rb.setOrientation(null);
 				return 0;
 			} else { // si non on calcule la nouvelle victime à aller sauver
 				chooseVictim(idRobot);
+//				System.out.println("je suis "+rb.getName()+" je vais sauver "+rb.getGoalChoosen().getNameV());
+//				System.out.println("premiere commande "+rb.getOrder().get(0).getNameV()+" orienté vers");
+//				graph.printAdjacent(rb.getOrder().get(0).getVoisinsFace());
+				if (rb.getGoalChoosen().getNameV().equals("L")) {
+					System.out.println("j'affiche le sommet L");
+					for (Vertex vertex : rb.getOrder()) {
+						System.out.println("sommet : "+vertex.getNameV());
+						graph.printAdjacent(vertex.getVoisinsFace());
+					}
+				}
 				return begin(idRobot, rb.getOrder());
 			}
 		} else { // en cours de parcours
 			int answer = rb.getReturneeValue();
 			// 4 demi tour, 2-->left, 3-->right, 1-->lineF
-			if (answer == 4 || answer == 2 || answer == 3) {
+			if (answer == 4 || answer == 2 || answer == 3 || answer == 214 || answer == 314) {
 				return 1; // on fait un suivit de ligne
 			} else { // je dois faire une gestion au cas ou il y a croisement
 				rb.setIntersectionPoint(true); // je suis sur un point d'intersection
@@ -80,7 +92,12 @@ public class ServerCenter {
 		}
 	}
 
-	private int getDirection(Vertex direction, boolean bip) {
+	private int getDirection(Vertex direction, boolean bip, RobotConnection rbc) {
+		System.out.println(rbc.getName()+" tu es a "+rbc.getPosition().getNameV()
+				+" va au sommet "+direction.getNameV()+" par la "+direction.getDirection());
+		rbc.setPosition(direction);
+		rbc.setOrientation(null);
+		rbc.setOrientation(direction.getVoisinsFace());
 		if (bip) {
 			if (direction.getDirection() == Direction.LEFT) {
 				return 21;
@@ -101,136 +118,145 @@ public class ServerCenter {
 		RobotConnection rbc = robotConnection.get(idRobot);
 		Vertex cmd;
 		boolean bip = false;
+		boolean vide = false; //
 		if (!rbc.getOrder().isEmpty()) { // il y a encore de cmd possible
 			cmd = rbc.getNextCmd(true);
 			if (rbc.getGoalChoosen().equals(cmd)) { // j'ai recuperer la victime
 				rbc.setVictimTaking(true);
 				bip = true;
 			}
+			vide = true;
 		} else {
 			if (rbc.isVictimTaking()) {
-				System.out.println("victime recuperer ");
+				System.out.println("je suis "+rbc.getName()+" j'amène "+rbc.getGoalChoosen().getNameV()+
+						" à l'hopitale "+rbc.getHospitalChoosen().getNameV());
 				// on decide de la directoin a prendre dans cette condition
 				rbc.setVictimTaking(false);
 				return begin(idRobot, rbc.getOrdreH());
 			} else {
 				cmd = rbc.getNextCmd(false);
 				if (rbc.getHospitalChoosen().equals(cmd)) { // j'ai recuperer la victime
-					System.out.println("victime sauver");
+					System.out.println("je suis "+rbc.getName()+" je depose "+rbc.getGoalChoosen().getNameV()
+							+ "à l'hopital "+rbc.getHospitalChoosen().getNameV());
 					rbc.setVictimSaved(true);
 					bip = true;
 				}
+				vide = false;
 			}
 		}
 
 		// gestion de changement de direction
-		return priority(cmd, bip, idRobot);
-		// System.out.println(cmd.getNameV());
-		// mis à jour de l'orientation du ribot
-		// rbc.setPosition(cmd);
-		// rbc.setOrientation(cmd.getVoisinsFace());
-		// return getDirection(cmd, bip);
+		return priority(cmd, bip, vide, idRobot);
 	}
-
+	
 	// determine la priorite de passage en cas de session critique
-	private synchronized int priority(Vertex cmd, boolean bip, int idRobot) {
+	private synchronized int priority(Vertex cmd, boolean bip, boolean vide, int idRobot) {
 		RobotConnection rbcfac = null;
 		RobotConnection rbc = robotConnection.get(idRobot);
-//		if (rbc.isStop()) {
-//			try {
-//				Thread.sleep(5000);
-//			} catch (InterruptedException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-//			rbc.setStop(false);
-//		}
 		// mise à jour mais attention
+		int ret = 0;
 		if ((rbcfac = isOccupated(idRobot)) != null) {
 			if (!rbcfac.getPosition().equals(cmd)) { // le robot n'est pas sur le coté ou je veux y aller
-//				System.out.println("il n' y a pas de robot ou je veux aller");
-				rbc.setPosition(cmd);
-				rbc.setOrientation(cmd.getVoisinsFace());	// traverser
-				System.out.println(rbc.getName() + "OK 1");
+				System.out.println(rbc.getName()+" je suis à la position : "+rbc.getPosition().getNameV()+
+						" il n'y a personne à la position "+cmd.getNameV());
 				rbcfac.setStop(true);
-				return getDirection(cmd, bip);
+				return getDirection(cmd, bip, rbc);
 			} else { // il est la ou je veux aller
-
-				System.out.println(rbc.getName() + "OK 2");
-				if (!rbcfac.isIntersectionPoint()) {
-					if (bip) { // on remet la commande
-						rbc.getOrder().add(0, cmd);
-					} else {
-						rbc.getOrdreH().add(0, cmd);
-					}
+				if (!rbcfac.isIntersectionPoint() || hospitals.contains(rbcfac.getPosition())) {
+					cmdRst(cmd, vide, rbc);
+					System.out.println("je suis "+rbc.getName()
+					+" en position : "+rbc.getPosition().getNameV()
+					+" et j'attends");
+					System.out.println("car "+rbcfac.getName()+" est en position "+
+					rbcfac.getPosition().getNameV());
 					return 10; // demande d'attendre
 				} else {
-
-					System.out.println(rbc.getName() + "OK 3");
-					int ret = 0;
-				
-					if (rbcfac.getOrder().get(0).equals(rbc.getPosition())) {
-						ret = collision(cmd, idRobot, bip);
+					// arrivé à l'intersection 
+					if (getFirstCmd(rbcfac).equals(rbc.getPosition())) {
+						System.out.println(rbc.getName() + " c'est moi qui gère la collision");
+						System.out.println("je veux aller à "+cmd.getNameV());
+						graph.printAdjacent(cmd.getVoisinsFace());
+						ret = collision(cmd, idRobot, vide);
 					}else {
-						rbc.setPosition(cmd);
-						rbc.setOrientation(cmd.getVoisinsFace());
-							// traverser
-						ret = getDirection(cmd, bip);
+//						System.out.println(rbc.getName() + " j'ai la priorité");
+						ret = getDirection(cmd, bip, rbc);
 					}
 					rbcfac.setStop(true);
-					System.out.println(rbc.getName() + "OK 4");
-					return ret;
+//					return ret;
 				}
 			}
 		}else {
-			rbc.setPosition(cmd);
-			rbc.setOrientation(cmd.getVoisinsFace());
-			return getDirection(cmd, bip);
+			ret = getDirection(cmd, bip, rbc);
+		}
+		rbc.setIntersectionPoint(false); // mettre à ajour qu'il quitte l'intersection
+		return ret;
+	}
+	
+	private Vertex getFirstCmd(RobotConnection rbc) {
+		if (!rbc.getOrder().isEmpty()) {
+			return rbc.getOrder().get(0);
+		}else {
+			if (!rbc.getOrdreH().isEmpty()) {
+				return rbc.getOrdreH().get(0);
+			}else {
+				return null;
+			}
 		}
 	}
-
-	private int collision(Vertex cmd, int idRobot, boolean bip) {
+	
+	private int collision(Vertex cmd, int idRobot, boolean vide) {
 		RobotConnection rbc = robotConnection.get(idRobot);
 		int ret;
 		if (cmd.getDirection() == Direction.LEFT) {
 			// on remet la commande en changean la direction
-			ret = 214; // on prends la direction inverse on avance et on fait demi tour
-		} else {
-			ret = 314;
-		}
-
-		if (cmd.getDirection() == Direction.LEFT) {
 			cmd.setDirection(Direction.RIGHT);
+			ret = 314; // on prends la direction inverse on avance et on fait demi tour
+			
 		} else {
 			cmd.setDirection(Direction.LEFT);
+			ret = 214;
 		}
-		if (bip) {
-			rbc.getOrder().add(0, cmd);
-		} else {
-			rbc.getOrdreH().add(0, cmd);
-		}
-		
-		miseAjour(rbc, cmd);
+		System.out.println(rbc.getName()+" j éais orienté vers ");
+		graph.printAdjacent(rbc.getOrientation());
+		System.out.println(" et ma position étais "+rbc.getPosition().getNameV());
+		miseAjour(rbc, cmd, vide);
+		System.out.println(rbc.getName()+" maintenant je suis orienté ");
+		graph.printAdjacent(rbc.getOrientation());
+		System.out.println(" et ma position "+rbc.getPosition().getNameV());
 		return ret;
 
 	}
 
-	private void miseAjour(RobotConnection rbc, Vertex cmd) {
+	private void miseAjour(RobotConnection rbc, Vertex cmd, boolean vide) {
 		List<Vertex> newOrientation = new ArrayList<>();
 		newOrientation.add(rbc.getPosition());
 		newOrientation.add(cmd);
-		rbc.getOrder().add(cmd);
+		System.out.println("l'ancienne orientation");
+		graph.printAdjacent(rbc.getOrientation());
+		System.out.println("nouvelle orientation calculée ");
+		graph.printAdjacent(newOrientation);
+		cmdRst(cmd, vide, rbc);
 		for (Vertex vertex : rbc.getOrientation()) {
 			if (!vertex.equals(cmd)) {
+				System.err.println("je rentre de dans ");
 				rbc.setPosition(vertex);
 				rbc.getPosition().setVoisinsFace(newOrientation);
+				rbc.setOrientation(null);
 				rbc.setOrientation(newOrientation);
 				return;
 			}
 		}
 
 	}
-
+	
+	private void cmdRst(Vertex cmd, boolean vide, RobotConnection rbc) {
+		if (vide) {
+			rbc.getOrder().add(0, cmd);
+		} else {
+			rbc.getOrdreH().add(0, cmd);
+		}
+	}
+	
 	// cherche s'il y a un robot qui peut provoquer un conflic
 	private RobotConnection isOccupated(int idRobot) {
 		RobotConnection rbc = robotConnection.get(idRobot);
@@ -246,15 +272,16 @@ public class ServerCenter {
 
 	// si le sommet me fait face
 	private boolean isFace(RobotConnection rbc, RobotConnection robotConnection2) {
-		return rbc.getOrientation().contains(robotConnection2.getPosition())
-				&& robotConnection2.getOrientation().contains(rbc.getPosition());
-
+		return rbc.getOrientation().contains(robotConnection2.getPosition()) 
+				&& (robotConnection2.getOrientation().contains(rbc.getPosition()) 
+					|| hospitals.contains(robotConnection2.getPosition()));
 	}
 
 	// mis à jour de la nouvelle orientation du robot
 	/**
 	 * @param rbc
 	 */
+	// TODO
 	private void updateOrientation(RobotConnection rbc) {
 		List<Vertex> adj = this.graph.getAdjacent(rbc.getPosition());
 		List<Vertex> update = new ArrayList<>();
@@ -263,17 +290,42 @@ public class ServerCenter {
 				update.add(vertex);
 			}
 		}
+		
+		if (update.size() == 1) {
+			Vertex temp = update.get(0);
+			for (Vertex vertex : filter(adj)) {
+				if (temp.getDirection() != vertex.getDirection()){
+					update.add(vertex);
+				}
+			}
+		}
+		rbc.getPosition().setVoisinsFace(update);
+		rbc.setOrientation(null);
 		rbc.setOrientation(update);
 	}
-
+	
+	private List<Vertex> filter(List<Vertex> adj) {
+		List<Vertex> array = new ArrayList<>();
+		
+		for (int i = 0; i < adj.size(); i++) {
+		    for (int j = 0; j < adj.size(); j++) {
+		    	if (i != j && adj.get(i).equals(adj.get(j))) {
+					array.add(adj.get(i));
+					array.add(adj.get(j));
+					return array;
+				}
+			}
+		}
+		return array;
+	}
+	
 	// determine le type de demarrage demi tour tous droit ou demi tour simplement
 	private int begin(int idRobot, List<Vertex> ordr) {
 		RobotConnection rbc = robotConnection.get(idRobot);
-		System.out.println("je suis "+rbc.getName()+" et ");
-		System.out.println("je pars de "+rbc.getPosition().getNameV()+" à "+rbc.getGoalChoosen().getNameV());
+//		System.out.println(rbc.getName());
+//		System.out.println("depart "+rbc.getPosition().getNameV()+" victime "
+//		+rbc.getGoalChoosen().getNameV()+" hopital "+rbc.getHospitalChoosen().getNameV());
 		if (ordr.isEmpty() || !rbc.getOrientation().contains(ordr.get(0))) {
-//			System.out.println(rbc.getPosition().getNameV());
-//			graph.printAdjacent(rbc.getOrientation());
 			updateOrientation(rbc);
 			return 4;
 		} else {
@@ -283,6 +335,8 @@ public class ServerCenter {
 
 	private void searchVictim(Vertex starting, Vertex g, RobotConnection rbc) {
 		Astar as = new Astar(graph, g, starting);
+//		System.out.println("orientation de "+rbc.getName());
+//		graph.printAdjacent(rbc.getOrientation());
 		as.aStar(rbc.getOrientation());
 		List<Vertex> newOrientation = as.getGoal().getVoisinsFace();
 		Vertex newStart = as.getGoal();
@@ -303,12 +357,17 @@ public class ServerCenter {
 	// on synchronise cette fonction
 	public synchronized void chooseVictim(int idRobot) {
 		RobotConnection rbc = robotConnection.get(idRobot);
+		System.out.println(rbc.getName()+" je suis en position "+rbc.getPosition().getNameV()
+				+" orienté vers ");
+		graph.printAdjacent(rbc.getOrientation());
 		rbc.setRateOfRouting(2000); // initialisation du parcours
 		for (Vertex g : this.getGoals()) {
 			searchVictim(rbc.getPosition(), g, rbc); // on cherche la victime ideal
 		}
 		// une fois la victime choisi on le supprime de la liste des victimes
 		goals.remove(rbc.getGoalChoosen()); // verifier si ce n'est pas vide
+		System.out.println("je vais sauver "+rbc.getGoalChoosen().getNameV()
+				+" je l'amène "+rbc.getHospitalChoosen().getNameV());
 	}
 
 	public static void main(String[] args) throws NXTCommException {
@@ -319,8 +378,9 @@ public class ServerCenter {
 		orientation.add(new Vertex("C", 0, 2, false, Direction.LEFT));
 		Vertex start = new Vertex("A", 0, 28, false, Direction.STRAIGHT);
 
-//		NXTInfo hydra = new NXTInfo(NXTCommFactory.BLUETOOTH, "L.A.T.I.S", "00:16:53:1C:24E7");
-		NXTInfo hydra = new NXTInfo(NXTCommFactory.BLUETOOTH, "L.A.T.I.S", "00:16:53:16:22:92");
+		NXTInfo hydra = new NXTInfo(NXTCommFactory.BLUETOOTH, "L.A.T.I.S", "00:16:53:1C:24E7");
+//		NXTInfo hydra = new NXTInfo(NXTCommFactory.BLUETOOTH, "L.A.T.I.S", "00:16:53:16:22:92");
+//		NXTInfo hydra = new NXTInfo(NXTCommFactory.BLUETOOTH, "L.A.T.I.S", "00:16:53:18:EB:71");
 		
 		List<Vertex> orientation1 = new ArrayList<>();
 		orientation1.add(new Vertex("K", 0, 4, false, Direction.LEFT));
@@ -335,6 +395,9 @@ public class ServerCenter {
 		List<Vertex> goals = new ArrayList<>();
 		goals.add(new Vertex("I", 0, 2, false, Direction.STRAIGHT));
 		goals.add(new Vertex("K", 0, 4, false, Direction.STRAIGHT));
+		goals.add(new Vertex("H", 0, 9, false, Direction.STRAIGHT));
+		goals.add(new Vertex("J", 0, 8, false, Direction.STRAIGHT));
+		goals.add(new Vertex("L", 0, 13, false, Direction.STRAIGHT));
 		// ensemble d'hopitaux
 		List<Vertex> hospitals = new ArrayList<>();
 		hospitals.add(new Vertex("B", 0, 7, false, Direction.STRAIGHT));
